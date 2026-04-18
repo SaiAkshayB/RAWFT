@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ATS Resume Generator</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #dbe2ea;
+      --accent: #1d4ed8;
+      --accent-2: #0f766e;
+      --danger: #b91c1c;
+      --warn: #92400e;
+      --success: #065f46;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Calibri, "Times New Roman", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.45;
+    }
+
+    h1, h2, h3 { margin: 0 0 .5rem; }
+
+    .app {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: minmax(380px, 1fr) minmax(420px, 1fr);
+      gap: 1rem;
+      min-height: 100vh;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 1rem 1rem .75rem;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff, #f9fbff);
+    }
+
+    .panel-body { padding: 1rem; }
+
+    .muted { color: var(--muted); font-size: .9rem; }
+
+    .section-block {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: .9rem;
+      margin-bottom: 1rem;
+      background: #fff;
+    }
+
+    .section-block.constant {
+      border-left: 4px solid var(--accent);
+      background: #f8fbff;
+    }
+
+    .section-block.variable {
+      border-left: 4px solid var(--accent-2);
+      background: #f5fbfa;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: .5rem;
+      margin-bottom: .6rem;
+    }
+
+    .badge {
+      font-size: .75rem;
+      padding: .12rem .45rem;
+      border-radius: 999px;
+      border: 1px solid;
+      font-weight: 700;
+    }
+
+    .badge.constant { color: var(--accent); border-color: #bfdbfe; background: #eff6ff; }
+    .badge.variable { color: var(--accent-2); border-color: #99f6e4; background: #ecfeff; }
+
+    .grid { display: grid; gap: .7rem; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    label {
+      display: block;
+      font-size: .85rem;
+      font-weight: 700;
+      margin-bottom: .25rem;
+    }
+
+    input, textarea, select, button {
+      width: 100%;
+      font: inherit;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      padding: .55rem .65rem;
+      background: #fff;
+    }
+
+    textarea { min-height: 90px; resize: vertical; }
+    .compact { min-height: 64px; }
+
+    .helper { font-size: .77rem; color: var(--muted); margin-top: .18rem; }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .45rem;
+      margin-bottom: .8rem;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      background: #fff;
+      transition: .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button.primary { background: var(--accent); color: #fff; border-color: #1e40af; }
+    button.secondary { background: #e2e8f0; }
+    button.success { background: #047857; color: #fff; border-color: #065f46; }
+    button.warn { background: #fbbf24; color: #3f2d06; border-color: #d97706; }
+    button.danger { background: #ef4444; color: #fff; border-color: #b91c1c; }
+
+    .experience-card,
+    .skill-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: .8rem;
+      margin-bottom: .8rem;
+      background: #fff;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .5rem;
+    }
+
+    .card-actions { display: flex; gap: .4rem; }
+    .card-actions button { width: auto; padding: .42rem .62rem; font-size: .82rem; }
+
+    .message {
+      margin: .6rem 0;
+      padding: .55rem .65rem;
+      border-radius: 8px;
+      font-size: .88rem;
+      border: 1px solid;
+    }
+
+    .message.error { background: #fef2f2; color: var(--danger); border-color: #fecaca; }
+    .message.warn { background: #fffbeb; color: var(--warn); border-color: #fde68a; }
+    .message.success { background: #ecfdf5; color: var(--success); border-color: #a7f3d0; }
+
+    .score-wrap {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: .8rem;
+      background: #fff;
+      margin-top: .6rem;
+    }
+
+    .score-bar {
+      width: 100%;
+      height: 10px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .score-fill { height: 100%; background: #22c55e; }
+
+    .keyword-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-top: .5rem;
+    }
+
+    .chip {
+      font-size: .78rem;
+      padding: .2rem .5rem;
+      border-radius: 999px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+
+    .preview-wrap { background: #eef3fb; }
+
+    .resume-paper {
+      max-width: 840px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 1.2rem 1.4rem;
+      border: 1px solid #d5dce7;
+      min-height: 88vh;
+      color: #111827;
+      font-family: Arial, Calibri, "Times New Roman", sans-serif;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, .08);
+    }
+
+    .resume-paper h1 {
+      font-size: 1.55rem;
+      margin-bottom: .1rem;
+      letter-spacing: .2px;
+    }
+
+    .resume-paper .role-line { font-size: 1rem; font-weight: 700; margin-bottom: .2rem; }
+
+    .resume-paper .contact {
+      font-size: .9rem;
+      margin-bottom: .8rem;
+      color: #374151;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: .4rem;
+    }
+
+    .resume-paper h2 {
+      font-size: 1rem;
+      border-bottom: 1px solid #d1d5db;
+      margin-top: .8rem;
+      padding-bottom: .15rem;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+
+    .resume-paper p { margin: .35rem 0; font-size: .93rem; }
+    .resume-paper ul { margin: .25rem 0 .5rem 1rem; padding: 0; }
+    .resume-paper li { margin: .18rem 0; font-size: .92rem; }
+
+    .exp-header {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .25rem;
+      font-size: .92rem;
+      font-weight: 700;
+      margin-top: .45rem;
+    }
+
+    .small-note { font-size: .8rem; color: #4b5563; }
+    .skills-output p { margin: .2rem 0; }
+
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 1fr; }
+      .resume-paper { min-height: auto; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .app { display: block; padding: 0; }
+      .controls-panel, .non-print { display: none !important; }
+      .preview-panel { border: none; box-shadow: none; }
+      .resume-paper { border: none; box-shadow: none; max-width: 100%; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel controls-panel non-print">
+      <header class="panel-header">
+        <h1>ATS Resume Generator</h1>
+        <p class="muted">Single-file ATS-focused resume builder with <strong>Constant Data</strong> + <strong>Variable Data</strong> resume versions.</p>
+      </header>
+      <div class="panel-body">
+        <div class="toolbar">
+          <button id="btnSaveMaster" class="primary">Save Master Profile</button>
+          <button id="btnLoadMaster" class="secondary">Load Master Profile</button>
+          <button id="btnDuplicateVersion" class="success">Duplicate Resume Version</button>
+          <button id="btnAddExperience" class="secondary">Add Experience</button>
+          <button id="btnPreview" class="secondary">Refresh Preview</button>
+          <button id="btnPrint" class="warn">Print / Save PDF</button>
+          <button id="btnCopyAts" class="secondary">Copy ATS Text</button>
+          <button id="btnExportJson" class="secondary">Export JSON</button>
+        </div>
+        <input id="jsonImport" type="file" accept="application/json" />
+
+        <div id="globalMessages" aria-live="polite"></div>
+
+        <article class="section-block constant">
+          <div class="section-title">
+            <h2>Constant Data</h2>
+            <span class="badge constant">Reusable</span>
+          </div>
+          <p class="helper">Use this once for your master profile. It remains the same across resume versions unless you edit it.</p>
+
+          <div class="grid two">
+            <div>
+              <label for="fullName">Full Name *</label>
+              <input id="fullName" />
+            </div>
+            <div>
+              <label for="targetRole">Job Title / Target Role *</label>
+              <input id="targetRole" />
+            </div>
+            <div>
+              <label for="email">Email *</label>
+              <input id="email" type="email" />
+            </div>
+            <div>
+              <label for="phone">Phone *</label>
+              <input id="phone" />
+            </div>
+            <div>
+              <label for="linkedin">LinkedIn</label>
+              <input id="linkedin" />
+            </div>
+            <div>
+              <label for="location">Location</label>
+              <input id="location" />
+            </div>
+          </div>
+
+          <div>
+            <label for="education">Education (one per line)</label>
+            <textarea id="education" class="compact"></textarea>
+          </div>
+          <div>
+            <label for="certifications">Certifications (one per line)</label>
+            <textarea id="certifications" class="compact"></textarea>
+          </div>
+          <div>
+            <label for="defaultBullets">Default Project Bullets / Standard Achievements (one per line)</label>
+            <textarea id="defaultBullets"></textarea>
+            <p class="helper">Reusable achievements merged into each experience.</p>
+          </div>
+        </article>
+
+        <article class="section-block variable">
+          <div class="section-title">
+            <h2>Variable Data</h2>
+            <span class="badge variable">Per Resume Version</span>
+          </div>
+          <p class="helper">Summary and Professional Skills are version-specific and generated from the current Job Description.</p>
+
+          <div class="grid two">
+            <div>
+              <label for="versionName">Resume Version Name</label>
+              <input id="versionName" />
+            </div>
+            <div>
+              <label for="versionSelect">Switch Version</label>
+              <select id="versionSelect"></select>
+            </div>
+          </div>
+
+          <div>
+            <label for="versionSummary">Summary (Variable)</label>
+            <textarea id="versionSummary" placeholder="Generate from JD, then fine-tune for this version."></textarea>
+          </div>
+
+          <div class="card-head" style="margin-top:.6rem;">
+            <strong>Professional Skills (Variable, grouped)</strong>
+            <div class="card-actions">
+              <button id="btnGenerateProfileFromJD" type="button" class="primary">Generate Summary &amp; Skills from JD</button>
+            </div>
+          </div>
+          <div id="skillsEditorContainer"></div>
+
+          <div id="experienceContainer" style="margin-top:.8rem;"></div>
+        </article>
+
+        <article class="section-block">
+          <h2>Smart ATS Assistance</h2>
+          <p class="helper">Paste a job description to generate version-specific summary/skills and ATS analysis.</p>
+          <label for="jobDescription">Job Description</label>
+          <textarea id="jobDescription" placeholder="Paste JD here..."></textarea>
+          <div class="grid two" style="margin-top:.55rem;">
+            <button id="btnAnalyzeAts" class="primary">Analyze ATS Match</button>
+            <button id="btnGenerateAllBullets" class="secondary">Auto-Generate Bullets</button>
+          </div>
+
+          <div class="score-wrap">
+            <h3>ATS Match Score: <span id="atsScoreValue">0</span>/100</h3>
+            <div class="score-bar"><div id="scoreFill" class="score-fill" style="width:0%"></div></div>
+            <p id="scoreBreakdown" class="small-note"></p>
+            <div>
+              <strong>Missing / Suggested Keywords:</strong>
+              <div id="missingKeywords" class="keyword-list"></div>
+            </div>
+            <div style="margin-top:.45rem;">
+              <strong>Suggestions:</strong>
+              <ul id="atsSuggestions"></ul>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel preview-panel preview-wrap">
+      <header class="panel-header">
+        <h2>Resume Preview (ATS-Friendly Single Column)</h2>
+        <p class="muted">Uses standard headings and clean formatting for easy copy/paste into Word or PDF export.</p>
+      </header>
+      <div class="panel-body">
+        <article id="resumePreview" class="resume-paper" aria-live="polite"></article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = 'atsResumeMasterProfileV2';
+
+      const DEFAULT_SKILL_GROUPS = {
+        Programming: [],
+        'Data Engineering': [],
+        'Cloud Platforms': [],
+        'Databases / Warehousing': [],
+        'Orchestration / DevOps': [],
+        'Analytics / BI': [],
+        'Governance / Quality': [],
+        Frontend: [],
+        Backend: [],
+        APIs: [],
+        Databases: [],
+        'Cloud / DevOps': [],
+        'Testing / QA': [],
+        'Professional Strengths': []
+      };
+
+      const JD_DICTIONARY = {
+        roleFamilies: [
+          { role: 'Senior Data Engineer', aliases: ['senior data engineer', 'data engineer iii', 'lead data engineer'] },
+          { role: 'Data Platform Engineer', aliases: ['data platform engineer', 'platform data engineer'] },
+          { role: 'Cloud Data Engineer', aliases: ['cloud data engineer'] },
+          { role: 'Analytics Engineer', aliases: ['analytics engineer'] },
+          { role: 'BI Engineer', aliases: ['bi engineer', 'business intelligence engineer', 'business intelligence developer'] },
+          { role: 'ETL Developer', aliases: ['etl developer', 'etl engineer'] },
+          { role: 'AI/ML Data Engineer', aliases: ['ml data engineer', 'machine learning data engineer', 'ai data engineer'] },
+          { role: 'Full Stack Engineer', aliases: ['full stack engineer', 'full-stack engineer', 'full stack developer'] },
+          { role: 'Backend Engineer', aliases: ['backend engineer', 'back end engineer', 'backend developer'] },
+          { role: 'Software Engineer', aliases: ['software engineer', 'application engineer'] }
+        ],
+        seniorityPatterns: [
+          { label: 'Principal', regex: /\bprincipal\b/i },
+          { label: 'Lead', regex: /\blead\b/i },
+          { label: 'Senior', regex: /\bsenior\b|\bsr\.?\b/i },
+          { label: 'Mid-Level', regex: /\bmid\b|\bintermediate\b/i },
+          { label: 'Junior', regex: /\bjunior\b|\bjr\.?\b|\bentry[- ]level\b/i }
+        ],
+        programming: ['Python', 'SQL', 'Scala', 'Java', 'JavaScript', 'TypeScript', 'Go', 'C#', 'R'],
+        dataEngineering: ['Spark', 'Kafka', 'Airflow', 'dbt', 'ETL', 'ELT', 'CDC', 'Databricks', 'Hadoop', 'Flink', 'NiFi'],
+        clouds: ['AWS', 'Azure', 'GCP'],
+        cloudAliases: {
+          'amazon web services': 'AWS',
+          'aws': 'AWS',
+          'microsoft azure': 'Azure',
+          'azure': 'Azure',
+          'google cloud platform': 'GCP',
+          'google cloud': 'GCP',
+          'gcp': 'GCP'
+        },
+        databases: ['Snowflake', 'BigQuery', 'Redshift', 'Synapse', 'PostgreSQL', 'MySQL', 'SQL Server', 'Oracle', 'MongoDB', 'Cassandra', 'S3', 'ADLS', 'GCS'],
+        orchestrationDevOps: ['Airflow', 'ADF', 'Jenkins', 'Git', 'CI/CD', 'Terraform', 'Kubernetes', 'Docker', 'GitHub Actions'],
+        analyticsBI: ['Power BI', 'Tableau', 'Looker', 'Qlik', 'Mode'],
+        governanceQuality: ['Data Validation', 'Data Lineage', 'Metadata Management', 'Data Quality', 'Observability', 'Monitoring', 'Data Governance'],
+        frontend: ['React', 'Angular', 'Vue', 'HTML', 'CSS', 'Next.js'],
+        backend: ['Node.js', 'Express', '.NET', 'Spring Boot', 'Django', 'FastAPI'],
+        apis: ['REST', 'GraphQL', 'gRPC', 'API Gateway'],
+        testing: ['Unit Testing', 'Integration Testing', 'Pytest', 'Jest', 'Cypress', 'Selenium', 'TDD'],
+        softSkills: ['stakeholder management', 'cross-functional collaboration', 'mentoring', 'communication', 'ownership', 'problem solving', 'agile delivery'],
+        domainTerms: ['finance', 'banking', 'healthcare', 'insurance', 'retail', 'ecommerce', 'telecom', 'manufacturing', 'supply chain', 'fraud', 'risk', 'compliance', 'payments'],
+        responsibilityPhrases: [
+          /design(?:ing)?\s+scalable\s+data\s+pipelines?/i,
+          /build(?:ing)?\s+(?:batch|real[- ]time)\s+data\s+systems?/i,
+          /optimi[sz]e(?:d|ing)?\s+performance/i,
+          /collaborat(?:e|ing|ed)\s+with\s+cross[- ]functional\s+teams?/i,
+          /deliver(?:ing|ed)?\s+analytics\s+solutions?/i,
+          /implement(?:ing|ed)?\s+data\s+quality/i,
+          /support(?:ing|ed)?\s+business\s+intelligence/i
+        ]
+      };
+
+      let constantProfileData = {};
+      let variableResumeData = { versions: [], activeVersionId: null };
+
+      const sampleData = {
+        constantProfileData: {
+          fullName: 'Jordan Mitchell',
+          targetRole: 'Senior Data Engineer',
+          email: 'jordan.mitchell@email.com',
+          phone: '+1 (555) 240-1188',
+          linkedin: 'linkedin.com/in/jordanmitchell',
+          location: 'Austin, TX',
+          education: 'B.S. in Computer Science - University of Texas at Dallas',
+          certifications: 'AWS Certified Developer - Associate\nDatabricks Data Engineer Associate',
+          defaultBullets: 'Improved release cadence by automating CI/CD pipelines and reducing deployment failures.\nCollaborated with stakeholders to translate business requirements into scalable technical solutions.\nApplied test automation and code quality controls to improve maintainability and reduce production defects.'
+        },
+        variableResumeData: {
+          activeVersionId: 'version-1',
+          versions: [
+            {
+              id: 'version-1',
+              name: 'Finance Data Platform Version',
+              summary: 'Senior Data Engineer with 8+ years of experience designing resilient batch and real-time data pipelines, optimizing cloud-native platforms, and enabling trusted analytics delivery in regulated enterprise environments. Strong expertise in Python, SQL, Spark, Airflow, and Snowflake across AWS-driven architectures. Proven track record collaborating with product, analytics, and governance teams to improve data reliability, delivery speed, and operational observability.',
+              professionalSkills: {
+                Programming: ['Python', 'SQL', 'Scala'],
+                'Data Engineering': ['Spark', 'Kafka', 'Airflow', 'dbt', 'ETL', 'ELT'],
+                'Cloud Platforms': ['AWS', 'Azure'],
+                'Databases / Warehousing': ['Snowflake', 'Redshift', 'S3'],
+                'Orchestration / DevOps': ['Airflow', 'Git', 'CI/CD', 'Terraform'],
+                'Analytics / BI': ['Power BI'],
+                'Governance / Quality': ['Data Quality', 'Monitoring', 'Data Lineage']
+              },
+              experiences: [
+                {
+                  clientName: 'Mercury Bank',
+                  employerName: 'Apex Tech Solutions',
+                  roleTitle: 'Senior Data Engineer',
+                  startDate: '2022-03',
+                  endDate: '2024-10',
+                  location: 'Remote, US',
+                  responsibilities: 'Led modernization of loan data pipelines, reducing approval cycle time by 28%.\nImplemented secure microservices and improved API response time by 35%.\nPartnered with product and compliance teams to deliver audit-ready release documentation.',
+                  technologies: 'Python, SQL, Spark, Airflow, Snowflake, AWS',
+                  projectBullets: ''
+                }
+              ]
+            }
+          ]
+        }
+      };
+
+      const refs = {};
+
+      function cacheDom() {
+        const ids = [
+          'fullName', 'targetRole', 'email', 'phone', 'linkedin', 'location', 'education',
+          'certifications', 'defaultBullets', 'versionName', 'versionSelect', 'versionSummary',
+          'skillsEditorContainer', 'experienceContainer', 'resumePreview', 'jobDescription',
+          'atsScoreValue', 'scoreFill', 'missingKeywords', 'atsSuggestions', 'scoreBreakdown',
+          'globalMessages', 'jsonImport', 'btnSaveMaster', 'btnLoadMaster', 'btnDuplicateVersion',
+          'btnAddExperience', 'btnPreview', 'btnPrint', 'btnCopyAts', 'btnExportJson',
+          'btnAnalyzeAts', 'btnGenerateAllBullets', 'btnGenerateProfileFromJD'
+        ];
+        ids.forEach(id => refs[id] = document.getElementById(id));
+      }
+
+      function uid(prefix = 'id') {
+        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 9999)}`;
+      }
+
+      function setMessage(type, text, timeout = 3500) {
+        refs.globalMessages.innerHTML = `<div class="message ${type}">${escapeHtml(text)}</div>`;
+        if (timeout) setTimeout(() => { refs.globalMessages.innerHTML = ''; }, timeout);
+      }
+
+      function escapeHtml(str = '') {
+        return String(str)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#039;');
+      }
+
+      function splitLines(value = '') {
+        return String(value).split('\n').map(s => s.trim()).filter(Boolean);
+      }
+
+      function splitCsv(value = '') {
+        return String(value).split(',').map(s => s.trim()).filter(Boolean);
+      }
+
+      function monthLabel(val) {
+        if (!val) return 'Present';
+        const [y, m] = val.split('-');
+        if (!y || !m) return val;
+        const date = new Date(Number(y), Number(m) - 1, 1);
+        return `${date.toLocaleString('default', { month: 'short' })} ${y}`;
+      }
+
+      function deepClone(obj) {
+        return structuredClone(obj);
+      }
+
+      function ensureSkillGroups(skills = {}) {
+        const normalized = deepClone(DEFAULT_SKILL_GROUPS);
+        Object.entries(skills || {}).forEach(([k, v]) => {
+          if (!Array.isArray(v)) return;
+          normalized[k] = dedupeSkills(v.map(normalizeSkillName));
+        });
+        return normalized;
+      }
+
+      function ensureVersionShape(version) {
+        const safe = version || {};
+        return {
+          id: safe.id || uid('version'),
+          name: safe.name || 'Untitled Version',
+          summary: safe.summary || '',
+          professionalSkills: ensureSkillGroups(safe.professionalSkills || {}),
+          experiences: Array.isArray(safe.experiences) && safe.experiences.length
+            ? safe.experiences.map(exp => ({
+              clientName: exp.clientName || '',
+              employerName: exp.employerName || '',
+              roleTitle: exp.roleTitle || '',
+              startDate: exp.startDate || '',
+              endDate: exp.endDate || '',
+              location: exp.location || '',
+              responsibilities: exp.responsibilities || '',
+              technologies: exp.technologies || '',
+              projectBullets: exp.projectBullets || ''
+            }))
+            : [{ clientName: '', employerName: '', roleTitle: '', startDate: '', endDate: '', location: '', responsibilities: '', technologies: '', projectBullets: '' }]
+        };
+      }
+
+      function migrateLegacyData(parsed) {
+        const legacySummary = parsed?.constantProfileData?.summary || '';
+        const legacySkills = parsed?.constantProfileData?.skills || '';
+
+        const migratedConstant = {
+          fullName: parsed?.constantProfileData?.fullName || sampleData.constantProfileData.fullName,
+          targetRole: parsed?.constantProfileData?.targetRole || sampleData.constantProfileData.targetRole,
+          email: parsed?.constantProfileData?.email || sampleData.constantProfileData.email,
+          phone: parsed?.constantProfileData?.phone || sampleData.constantProfileData.phone,
+          linkedin: parsed?.constantProfileData?.linkedin || sampleData.constantProfileData.linkedin,
+          location: parsed?.constantProfileData?.location || sampleData.constantProfileData.location,
+          education: parsed?.constantProfileData?.education || sampleData.constantProfileData.education,
+          certifications: parsed?.constantProfileData?.certifications || sampleData.constantProfileData.certifications,
+          defaultBullets: parsed?.constantProfileData?.defaultBullets || sampleData.constantProfileData.defaultBullets
+        };
+
+        const versions = (parsed?.variableResumeData?.versions || sampleData.variableResumeData.versions).map(v => {
+          const next = ensureVersionShape(v);
+          if (!next.summary && legacySummary) next.summary = legacySummary;
+          if (!Object.values(next.professionalSkills).some(arr => arr.length) && legacySkills) {
+            next.professionalSkills['Professional Strengths'] = dedupeSkills(splitCsv(legacySkills).map(normalizeSkillName));
+          }
+          return next;
+        });
+
+        return {
+          constantProfileData: migratedConstant,
+          variableResumeData: {
+            activeVersionId: parsed?.variableResumeData?.activeVersionId || versions[0].id,
+            versions
+          }
+        };
+      }
+
+      function loadFromStorage() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          constantProfileData = deepClone(sampleData.constantProfileData);
+          variableResumeData = deepClone(sampleData.variableResumeData);
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(raw);
+          const migrated = migrateLegacyData(parsed);
+          constantProfileData = migrated.constantProfileData;
+          variableResumeData = migrated.variableResumeData;
+        } catch {
+          constantProfileData = deepClone(sampleData.constantProfileData);
+          variableResumeData = deepClone(sampleData.variableResumeData);
+        }
+      }
+
+      function persist() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ constantProfileData, variableResumeData }));
+      }
+
+      function getActiveVersion() {
+        return variableResumeData.versions.find(v => v.id === variableResumeData.activeVersionId) || variableResumeData.versions[0];
+      }
+
+      function updateConstantFromForm() {
+        constantProfileData.fullName = refs.fullName.value.trim();
+        constantProfileData.targetRole = refs.targetRole.value.trim();
+        constantProfileData.email = refs.email.value.trim();
+        constantProfileData.phone = refs.phone.value.trim();
+        constantProfileData.linkedin = refs.linkedin.value.trim();
+        constantProfileData.location = refs.location.value.trim();
+        constantProfileData.education = refs.education.value.trim();
+        constantProfileData.certifications = refs.certifications.value.trim();
+        constantProfileData.defaultBullets = refs.defaultBullets.value.trim();
+      }
+
+      function updateVariableFromForm() {
+        const active = getActiveVersion();
+        if (!active) return;
+        active.summary = refs.versionSummary.value.trim();
+
+        const textareas = refs.skillsEditorContainer.querySelectorAll('textarea[data-skill-category]');
+        textareas.forEach(t => {
+          const category = t.dataset.skillCategory;
+          active.professionalSkills[category] = dedupeSkills(splitCsv(t.value).map(normalizeSkillName));
+        });
+      }
+
+      function bindConstantToForm() {
+        refs.fullName.value = constantProfileData.fullName || '';
+        refs.targetRole.value = constantProfileData.targetRole || '';
+        refs.email.value = constantProfileData.email || '';
+        refs.phone.value = constantProfileData.phone || '';
+        refs.linkedin.value = constantProfileData.linkedin || '';
+        refs.location.value = constantProfileData.location || '';
+        refs.education.value = constantProfileData.education || '';
+        refs.certifications.value = constantProfileData.certifications || '';
+        refs.defaultBullets.value = constantProfileData.defaultBullets || '';
+      }
+
+      function renderVersionSelect() {
+        refs.versionSelect.innerHTML = '';
+        variableResumeData.versions.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.id;
+          opt.textContent = v.name;
+          refs.versionSelect.appendChild(opt);
+        });
+
+        refs.versionSelect.value = variableResumeData.activeVersionId;
+        const active = getActiveVersion();
+        refs.versionName.value = active?.name || '';
+        refs.versionSummary.value = active?.summary || '';
+      }
+
+      function renderSkillsEditor() {
+        const active = getActiveVersion();
+        refs.skillsEditorContainer.innerHTML = '';
+        const groups = active.professionalSkills || ensureSkillGroups({});
+
+        Object.entries(groups).forEach(([category, skills]) => {
+          const card = document.createElement('div');
+          card.className = 'skill-card';
+          card.innerHTML = `
+            <label>${escapeHtml(category)}</label>
+            <textarea class="compact" data-skill-category="${escapeHtml(category)}" placeholder="Comma-separated skills">${escapeHtml((skills || []).join(', '))}</textarea>
+          `;
+
+          card.querySelector('textarea').addEventListener('input', () => {
+            updateVariableFromForm();
+            renderResumePreview();
+            persist();
+          });
+
+          refs.skillsEditorContainer.appendChild(card);
+        });
+      }
+
+      function renderExperiences() {
+        const active = getActiveVersion();
+        refs.experienceContainer.innerHTML = '';
+        active.experiences.forEach((exp, index) => {
+          const card = document.createElement('div');
+          card.className = 'experience-card';
+          card.dataset.index = String(index);
+          card.innerHTML = `
+            <div class="card-head">
+              <strong>Experience ${index + 1}</strong>
+              <div class="card-actions">
+                <button type="button" data-action="generate">Generate Bullets</button>
+                <button type="button" data-action="remove" class="danger">Remove</button>
+              </div>
+            </div>
+            <div class="grid two">
+              <div>
+                <label>Client Name * (Variable)</label>
+                <input data-field="clientName" value="${escapeHtml(exp.clientName || '')}" />
+              </div>
+              <div>
+                <label>Employer / Vendor Name</label>
+                <input data-field="employerName" value="${escapeHtml(exp.employerName || '')}" />
+              </div>
+              <div>
+                <label>Role Title * (Variable if changed)</label>
+                <input data-field="roleTitle" value="${escapeHtml(exp.roleTitle || '')}" />
+              </div>
+              <div>
+                <label>Location</label>
+                <input data-field="location" value="${escapeHtml(exp.location || '')}" />
+              </div>
+              <div>
+                <label>Start Date * (YYYY-MM)</label>
+                <input data-field="startDate" type="month" value="${escapeHtml(exp.startDate || '')}" />
+              </div>
+              <div>
+                <label>End Date * (YYYY-MM or blank for Present)</label>
+                <input data-field="endDate" type="month" value="${escapeHtml(exp.endDate || '')}" />
+              </div>
+            </div>
+            <div>
+              <label>Responsibilities / Achievements</label>
+              <textarea data-field="responsibilities" class="compact">${escapeHtml(exp.responsibilities || '')}</textarea>
+            </div>
+            <div>
+              <label>Technologies Used</label>
+              <textarea data-field="technologies" class="compact">${escapeHtml(exp.technologies || '')}</textarea>
+            </div>
+            <div>
+              <label>Project/Client-Specific Bullets (Variable, one per line)</label>
+              <textarea data-field="projectBullets" class="compact">${escapeHtml(exp.projectBullets || '')}</textarea>
+            </div>
+          `;
+
+          card.querySelectorAll('input,textarea').forEach(el => {
+            el.addEventListener('input', (e) => {
+              const field = e.target.dataset.field;
+              active.experiences[index][field] = e.target.value;
+              renderResumePreview();
+              persist();
+            });
+          });
+
+          card.querySelector('[data-action="remove"]').addEventListener('click', () => {
+            if (active.experiences.length <= 1) {
+              setMessage('warn', 'At least one experience entry is required.');
+              return;
+            }
+            active.experiences.splice(index, 1);
+            renderAll();
+            persist();
+          });
+
+          card.querySelector('[data-action="generate"]').addEventListener('click', () => {
+            const bullets = generateBullets(active.experiences[index]);
+            active.experiences[index].projectBullets = bullets.join('\n');
+            renderAll();
+            persist();
+            setMessage('success', `Generated ATS-friendly bullets for Experience ${index + 1}.`);
+          });
+
+          refs.experienceContainer.appendChild(card);
+        });
+      }
+
+      function addExperience() {
+        const active = getActiveVersion();
+        active.experiences.push({
+          clientName: '', employerName: '', roleTitle: constantProfileData.targetRole || '',
+          startDate: '', endDate: '', location: '', responsibilities: '', technologies: '', projectBullets: ''
+        });
+        renderAll();
+      }
+
+      function duplicateVersion() {
+        const active = getActiveVersion();
+        const copy = deepClone(active);
+        copy.id = uid('version');
+        copy.name = `${active.name} (Copy)`;
+        variableResumeData.versions.push(copy);
+        variableResumeData.activeVersionId = copy.id;
+        renderAll();
+        persist();
+      }
+
+      function validateResume() {
+        updateConstantFromForm();
+        updateVariableFromForm();
+
+        const errors = [];
+        const warns = [];
+        const active = getActiveVersion();
+
+        if (!constantProfileData.fullName) errors.push('Full name is required.');
+        if (!constantProfileData.email) errors.push('Email is required.');
+        if (!constantProfileData.phone) errors.push('Phone is required.');
+        if (!constantProfileData.targetRole) errors.push('Job title/target role is required.');
+        if (!active.experiences.length) errors.push('At least one experience is required.');
+
+        active.experiences.forEach((exp, i) => {
+          if (!exp.clientName) errors.push(`Experience ${i + 1}: Client name is required.`);
+          if (!exp.roleTitle) errors.push(`Experience ${i + 1}: Role title is required.`);
+          if (!exp.startDate) errors.push(`Experience ${i + 1}: Start date is required.`);
+          if (exp.startDate && exp.endDate && exp.startDate > exp.endDate) {
+            errors.push(`Experience ${i + 1}: Start date cannot be after end date.`);
+          }
+        });
+
+        if (!active.summary) warns.push('Version summary is missing.');
+        if (!hasAnySkill(active.professionalSkills)) warns.push('Version professional skills are missing.');
+        if (!constantProfileData.education) warns.push('Education section is missing.');
+
+        return { errors, warns };
+      }
+
+      function hasAnySkill(skillsObj) {
+        return Object.values(skillsObj || {}).some(arr => Array.isArray(arr) && arr.length > 0);
+      }
+
+      function renderGroupedSkillsHtml(skillsObj = {}) {
+        const rows = Object.entries(skillsObj)
+          .filter(([, arr]) => Array.isArray(arr) && arr.length)
+          .map(([k, arr]) => `<p><strong>${escapeHtml(k)}:</strong> ${escapeHtml(arr.join(', '))}</p>`)
+          .join('');
+        return rows || '<p></p>';
+      }
+
+      function renderResumePreview() {
+        updateConstantFromForm();
+        updateVariableFromForm();
+        const active = getActiveVersion();
+
+        const eduItems = splitLines(constantProfileData.education);
+        const certItems = splitLines(constantProfileData.certifications);
+        const defaultBullets = splitLines(constantProfileData.defaultBullets);
+
+        const experiencesHtml = active.experiences.map(exp => {
+          const baseBullets = splitLines(exp.responsibilities);
+          const projectBullets = splitLines(exp.projectBullets || '');
+          const mergedBullets = [...baseBullets, ...projectBullets, ...defaultBullets].filter(Boolean);
+          const techText = splitCsv(exp.technologies).join(', ');
+          return `
+            <section>
+              <div class="exp-header">
+                <span>${escapeHtml(exp.roleTitle || '')} | ${escapeHtml(exp.clientName || '')}</span>
+                <span>${escapeHtml(monthLabel(exp.startDate))} - ${escapeHtml(monthLabel(exp.endDate || ''))}</span>
+              </div>
+              <p><strong>Employer:</strong> ${escapeHtml(exp.employerName || '')}${exp.location ? ` | <strong>Location:</strong> ${escapeHtml(exp.location)}` : ''}</p>
+              ${mergedBullets.length ? `<ul>${mergedBullets.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>` : ''}
+              ${techText ? `<p><strong>Technologies:</strong> ${escapeHtml(techText)}</p>` : ''}
+            </section>
+          `;
+        }).join('');
+
+        refs.resumePreview.innerHTML = `
+          <h1>${escapeHtml(constantProfileData.fullName || '')}</h1>
+          <div class="role-line">${escapeHtml(constantProfileData.targetRole || '')}</div>
+          <div class="contact">
+            ${escapeHtml(constantProfileData.email || '')} | ${escapeHtml(constantProfileData.phone || '')}
+            ${constantProfileData.linkedin ? ` | ${escapeHtml(constantProfileData.linkedin)}` : ''}
+            ${constantProfileData.location ? ` | ${escapeHtml(constantProfileData.location)}` : ''}
+          </div>
+
+          <h2>Summary</h2>
+          <p>${escapeHtml(active.summary || '')}</p>
+
+          <h2>Professional Skills</h2>
+          <div class="skills-output">${renderGroupedSkillsHtml(active.professionalSkills)}</div>
+
+          <h2>Professional Experience</h2>
+          ${experiencesHtml}
+
+          <h2>Education</h2>
+          ${eduItems.length ? `<ul>${eduItems.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : '<p></p>'}
+
+          <h2>Certifications</h2>
+          ${certItems.length ? `<ul>${certItems.map(c => `<li>${escapeHtml(c)}</li>`).join('')}</ul>` : '<p></p>'}
+        `;
+      }
+
+      function flattenSkills(skillsObj = {}) {
+        return Object.entries(skillsObj)
+          .filter(([, arr]) => Array.isArray(arr) && arr.length)
+          .map(([k, arr]) => `${k}: ${arr.join(', ')}`)
+          .join('\n');
+      }
+
+      function resumeTextForAts() {
+        const active = getActiveVersion();
+        const lines = [];
+        lines.push(constantProfileData.fullName || '');
+        lines.push(constantProfileData.targetRole || '');
+        lines.push([constantProfileData.email, constantProfileData.phone, constantProfileData.linkedin, constantProfileData.location].filter(Boolean).join(' | '));
+        lines.push('');
+        lines.push('Summary');
+        lines.push(active.summary || '');
+        lines.push('');
+        lines.push('Professional Skills');
+        lines.push(flattenSkills(active.professionalSkills));
+        lines.push('');
+        lines.push('Professional Experience');
+
+        active.experiences.forEach(exp => {
+          lines.push(`${exp.roleTitle} - ${exp.clientName}`);
+          lines.push(`${monthLabel(exp.startDate)} - ${monthLabel(exp.endDate || '')}`);
+          lines.push(`${exp.employerName} | ${exp.location || ''}`);
+          splitLines(exp.responsibilities).forEach(b => lines.push(`- ${b}`));
+          splitLines(exp.projectBullets || '').forEach(b => lines.push(`- ${b}`));
+          splitLines(constantProfileData.defaultBullets).forEach(b => lines.push(`- ${b}`));
+          lines.push(`Technologies: ${exp.technologies || ''}`);
+          lines.push('');
+        });
+
+        lines.push('Education');
+        splitLines(constantProfileData.education).forEach(e => lines.push(`- ${e}`));
+        lines.push('');
+        lines.push('Certifications');
+        splitLines(constantProfileData.certifications).forEach(c => lines.push(`- ${c}`));
+
+        return lines.join('\n').trim();
+      }
+
+      function normalizeSkillName(skill = '') {
+        const cleaned = skill.trim();
+        if (!cleaned) return '';
+
+        const lower = cleaned.toLowerCase();
+        const aliasMap = {
+          'amazon web services': 'AWS',
+          'aws': 'AWS',
+          'google cloud platform': 'GCP',
+          'google cloud': 'GCP',
+          'gcp': 'GCP',
+          'microsoft azure': 'Azure',
+          'structured query language': 'SQL',
+          'ci cd': 'CI/CD',
+          'ci/cd': 'CI/CD'
+        };
+
+        if (aliasMap[lower]) return aliasMap[lower];
+        if (cleaned.toUpperCase() === 'SQL') return 'SQL';
+        if (cleaned.toUpperCase() === 'ETL') return 'ETL';
+        if (cleaned.toUpperCase() === 'ELT') return 'ELT';
+        if (cleaned.toUpperCase() === 'CDC') return 'CDC';
+
+        return cleaned
+          .split(' ')
+          .map(part => part ? part[0].toUpperCase() + part.slice(1) : part)
+          .join(' ')
+          .replace('Aws', 'AWS')
+          .replace('Gcp', 'GCP')
+          .replace('Sql', 'SQL')
+          .replace('Ci/Cd', 'CI/CD')
+          .replace('Dbt', 'dbt')
+          .replace('Node.Js', 'Node.js');
+      }
+
+      function dedupeSkills(skillArray = []) {
+        const seen = new Set();
+        const output = [];
+        skillArray.forEach(raw => {
+          const value = normalizeSkillName(raw);
+          if (!value) return;
+          const key = value.toLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          output.push(value);
+        });
+        return output;
+      }
+
+      function includesTerm(text, term) {
+        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`\\b${escaped}\\b`, 'i').test(text);
+      }
+
+      function extractByDictionary(text, terms) {
+        return dedupeSkills(terms.filter(term => includesTerm(text, term)).map(normalizeSkillName));
+      }
+
+      function detectRoleTitle(jobDescription) {
+        const text = jobDescription.toLowerCase();
+        for (const family of JD_DICTIONARY.roleFamilies) {
+          if (family.aliases.some(alias => text.includes(alias))) return family.role;
+        }
+        return constantProfileData.targetRole || 'Software Engineer';
+      }
+
+      function detectSeniority(jobDescription) {
+        for (const rule of JD_DICTIONARY.seniorityPatterns) {
+          if (rule.regex.test(jobDescription)) return rule.label;
+        }
+        return '';
+      }
+
+      function detectYearsExperience(jobDescription) {
+        const patterns = [
+          /(\d+)\+?\s*years?\s+of\s+experience/i,
+          /minimum\s+of\s+(\d+)\+?\s*years?/i,
+          /(\d+)\s*\-\s*(\d+)\s*years?/i
+        ];
+
+        for (const pattern of patterns) {
+          const match = jobDescription.match(pattern);
+          if (match) {
+            if (match[2]) return `${match[1]}-${match[2]} years`;
+            return `${match[1]}+ years`;
+          }
+        }
+        return '';
+      }
+
+      function extractCloudPlatforms(jobDescription) {
+        const text = jobDescription.toLowerCase();
+        const matched = [];
+        Object.entries(JD_DICTIONARY.cloudAliases).forEach(([alias, normalized]) => {
+          if (text.includes(alias)) matched.push(normalized);
+        });
+        return dedupeSkills(matched);
+      }
+
+      function extractProgrammingLanguages(jobDescription) {
+        return extractByDictionary(jobDescription, JD_DICTIONARY.programming);
+      }
+
+      function extractDatabases(jobDescription) {
+        return extractByDictionary(jobDescription, JD_DICTIONARY.databases);
+      }
+
+      function extractDataEngineeringTerms(jobDescription) {
+        return extractByDictionary(jobDescription, JD_DICTIONARY.dataEngineering);
+      }
+
+      function extractAnalyticsTools(jobDescription) {
+        return extractByDictionary(jobDescription, JD_DICTIONARY.analyticsBI);
+      }
+
+      function extractOrchestrationTerms(jobDescription) {
+        return extractByDictionary(jobDescription, JD_DICTIONARY.orchestrationDevOps);
+      }
+
+      function extractGovernanceTerms(jobDescription) {
+        return extractByDictionary(jobDescription, JD_DICTIONARY.governanceQuality);
+      }
+
+      function extractSoftSkills(jobDescription) {
+        return dedupeSkills(JD_DICTIONARY.softSkills.filter(term => jobDescription.toLowerCase().includes(term)));
+      }
+
+      function extractDomainTerms(jobDescription) {
+        return dedupeSkills(JD_DICTIONARY.domainTerms.filter(term => jobDescription.toLowerCase().includes(term)).map(normalizeSkillName));
+      }
+
+      function extractResponsibilityPhrases(jobDescription) {
+        return JD_DICTIONARY.responsibilityPhrases
+          .map(rx => {
+            const match = jobDescription.match(rx);
+            return match ? match[0] : '';
+          })
+          .filter(Boolean)
+          .map(p => p[0].toUpperCase() + p.slice(1));
+      }
+
+      function extractPreferredSkills(jobDescription) {
+        const lines = splitLines(jobDescription);
+        const preferredLines = lines.filter(line => /preferred|nice to have|plus|good to have/i.test(line));
+        const preferredText = preferredLines.join(' ');
+
+        const combined = [
+          ...extractProgrammingLanguages(preferredText),
+          ...extractDataEngineeringTerms(preferredText),
+          ...extractCloudPlatforms(preferredText),
+          ...extractDatabases(preferredText),
+          ...extractAnalyticsTools(preferredText),
+          ...extractOrchestrationTerms(preferredText)
+        ];
+        return dedupeSkills(combined);
+      }
+
+      function extractHardSkills(jobDescription) {
+        return dedupeSkills([
+          ...extractProgrammingLanguages(jobDescription),
+          ...extractDataEngineeringTerms(jobDescription),
+          ...extractCloudPlatforms(jobDescription),
+          ...extractDatabases(jobDescription),
+          ...extractOrchestrationTerms(jobDescription),
+          ...extractAnalyticsTools(jobDescription),
+          ...extractByDictionary(jobDescription, JD_DICTIONARY.frontend),
+          ...extractByDictionary(jobDescription, JD_DICTIONARY.backend),
+          ...extractByDictionary(jobDescription, JD_DICTIONARY.apis),
+          ...extractByDictionary(jobDescription, JD_DICTIONARY.testing)
+        ]);
+      }
+
+      function parseJobDescription(jobDescription) {
+        const role = detectRoleTitle(jobDescription);
+        const seniority = detectSeniority(jobDescription);
+        const years = detectYearsExperience(jobDescription);
+
+        return {
+          role,
+          seniority,
+          years,
+          hardSkills: extractHardSkills(jobDescription),
+          cloudPlatforms: extractCloudPlatforms(jobDescription),
+          programmingLanguages: extractProgrammingLanguages(jobDescription),
+          databasesWarehousing: extractDatabases(jobDescription),
+          dataEngineeringTerms: extractDataEngineeringTerms(jobDescription),
+          analyticsBITools: extractAnalyticsTools(jobDescription),
+          orchestrationTerms: extractOrchestrationTerms(jobDescription),
+          governanceQuality: extractGovernanceTerms(jobDescription),
+          softSkills: extractSoftSkills(jobDescription),
+          domainTerms: extractDomainTerms(jobDescription),
+          responsibilityPhrases: extractResponsibilityPhrases(jobDescription),
+          preferredSkills: extractPreferredSkills(jobDescription)
+        };
+      }
+
+      function buildSkillGroups(parsedJD) {
+        const role = parsedJD.role.toLowerCase();
+        const groups = ensureSkillGroups({});
+        const isDataRole = /data|analytics|bi|etl|ml/.test(role);
+
+        if (isDataRole) {
+          groups.Programming = dedupeSkills(parsedJD.programmingLanguages.slice(0, 8));
+          groups['Data Engineering'] = dedupeSkills(parsedJD.dataEngineeringTerms.slice(0, 10));
+          groups['Cloud Platforms'] = dedupeSkills(parsedJD.cloudPlatforms.slice(0, 4));
+          groups['Databases / Warehousing'] = dedupeSkills(parsedJD.databasesWarehousing.slice(0, 8));
+          groups['Orchestration / DevOps'] = dedupeSkills(parsedJD.orchestrationTerms.slice(0, 8));
+          groups['Analytics / BI'] = dedupeSkills(parsedJD.analyticsBITools.slice(0, 6));
+          groups['Governance / Quality'] = dedupeSkills(parsedJD.governanceQuality.slice(0, 6));
+          groups['Professional Strengths'] = dedupeSkills(parsedJD.softSkills.filter(s => !/communication|team player|hardworking/i.test(s)).slice(0, 5));
+        } else {
+          groups.Frontend = dedupeSkills(extractByDictionary(parsedJD.hardSkills.join(' '), JD_DICTIONARY.frontend));
+          groups.Backend = dedupeSkills(extractByDictionary(parsedJD.hardSkills.join(' '), JD_DICTIONARY.backend));
+          groups.APIs = dedupeSkills(extractByDictionary(parsedJD.hardSkills.join(' '), JD_DICTIONARY.apis));
+          groups.Databases = dedupeSkills(parsedJD.databasesWarehousing.slice(0, 8));
+          groups['Cloud / DevOps'] = dedupeSkills([
+            ...parsedJD.cloudPlatforms,
+            ...parsedJD.orchestrationTerms.filter(v => !['Airflow', 'ADF'].includes(v))
+          ].slice(0, 8));
+          groups['Testing / QA'] = dedupeSkills(extractByDictionary(parsedJD.hardSkills.join(' '), JD_DICTIONARY.testing));
+          groups['Professional Strengths'] = dedupeSkills(parsedJD.softSkills.filter(s => !/communication|team player|hardworking/i.test(s)).slice(0, 5));
+        }
+
+        return groups;
+      }
+
+      function roleTheme(role) {
+        const value = role.toLowerCase();
+        if (value.includes('analytics')) return 'delivering trusted datasets and business-ready reporting';
+        if (value.includes('bi')) return 'enabling high-quality business intelligence and performance reporting';
+        if (value.includes('platform')) return 'scaling resilient enterprise data platforms for batch and real-time delivery';
+        if (value.includes('cloud')) return 'optimizing cloud-native data systems for reliability and cost efficiency';
+        if (value.includes('etl')) return 'building robust ETL/ELT workflows and dependable data movement';
+        if (value.includes('backend')) return 'developing reliable backend services and API-driven integrations';
+        if (value.includes('full stack')) return 'delivering end-to-end product features across frontend and backend systems';
+        return 'building scalable production systems and measurable business outcomes';
+      }
+
+      function generateProfessionalSummary(jobDescription, candidateProfile, parsedJD) {
+        const seniority = parsedJD.seniority || '';
+        const years = parsedJD.years || '';
+        const role = parsedJD.role || candidateProfile.targetRole || 'Software Engineer';
+
+        const techHighlights = dedupeSkills([
+          ...parsedJD.programmingLanguages,
+          ...parsedJD.dataEngineeringTerms,
+          ...parsedJD.databasesWarehousing,
+          ...parsedJD.cloudPlatforms,
+          ...parsedJD.orchestrationTerms,
+          ...parsedJD.analyticsBITools
+        ]).slice(0, 8);
+
+        const toolsPhrase = techHighlights.length
+          ? `Core strengths include ${techHighlights.join(', ')}.`
+          : 'Core strengths include modern engineering, data, and cloud tooling aligned to delivery goals.';
+
+        const domainPhrase = parsedJD.domainTerms.length
+          ? `Domain exposure includes ${parsedJD.domainTerms.slice(0, 3).join(', ')} environments with strong operational rigor.`
+          : 'Experienced in complex enterprise environments with a focus on quality, reliability, and delivery velocity.';
+
+        const responsibilityPhrase = parsedJD.responsibilityPhrases.length
+          ? `${parsedJD.responsibilityPhrases.slice(0, 2).join('; ')}.`
+          : 'Consistently partners with product, analytics, and engineering teams to translate requirements into maintainable, high-impact solutions.';
+
+        const line1Parts = [seniority, role].filter(Boolean).join(' ');
+        const line1 = years
+          ? `${line1Parts || role} with ${years} of experience ${roleTheme(role)}.`
+          : `${line1Parts || role} focused on ${roleTheme(role)}.`;
+
+        const line2 = toolsPhrase;
+        const line3 = parsedJD.cloudPlatforms.length
+          ? `Hands-on with ${parsedJD.cloudPlatforms.join(' and ')} cloud ecosystems, emphasizing scalable architecture, observability, and performance optimization.`
+          : 'Applies strong engineering discipline to architecture, performance tuning, and operational monitoring.';
+        const line4 = domainPhrase;
+        const line5 = responsibilityPhrase;
+
+        return [line1, line2, line3, line4, line5]
+          .map(line => line.replace(/\s+/g, ' ').trim())
+          .filter(Boolean)
+          .slice(0, 6)
+          .join('\n');
+      }
+
+      function generateSummaryAndSkillsFromJD() {
+        const jd = refs.jobDescription.value.trim();
+        if (!jd || jd.length < 80) {
+          setMessage('warn', 'Paste a fuller Job Description before generating summary and skills.');
+          return;
+        }
+
+        updateConstantFromForm();
+        const active = getActiveVersion();
+        const parsedJD = parseJobDescription(jd);
+
+        active.summary = generateProfessionalSummary(jd, constantProfileData, parsedJD);
+        active.professionalSkills = buildSkillGroups(parsedJD);
+
+        refs.versionSummary.value = active.summary;
+        renderSkillsEditor();
+        renderResumePreview();
+        analyzeAtsScore();
+        persist();
+
+        setMessage('success', 'Generated version-specific Summary and Professional Skills from Job Description.');
+      }
+
+      function generateBullets(exp) {
+        const role = exp.roleTitle || constantProfileData.targetRole || 'Engineer';
+        const client = exp.clientName || 'client organization';
+        const techs = splitCsv(exp.technologies || '').slice(0, 4).join(', ') || 'modern engineering stack';
+
+        return [
+          `Delivered ${role.toLowerCase()} outcomes for ${client}, improving workflow efficiency and operational reliability using ${techs}.`,
+          `Built production-ready capabilities with ${techs}, reducing defect leakage and strengthening release stability.`,
+          `Partnered with stakeholders to align technical execution with measurable business outcomes and adoption goals.`,
+          `Optimized performance and scalability for ${client}, improving throughput and response consistency under load.`
+        ];
+      }
+
+      function extractKeywords(text) {
+        const stopWords = new Set([
+          'the','and','for','with','that','this','from','into','your','you','are','our','will','have','has','had','job','role','work','team','using','ability','required','preferred','years','year','experience','strong','knowledge','skills','in','of','on','a','to','or','as','is','be','by','an','at','we','it'
+        ]);
+        const tokens = (text.toLowerCase().match(/[a-z][a-z0-9+.#/-]{2,}/g) || [])
+          .filter(t => !stopWords.has(t));
+        const freq = new Map();
+        tokens.forEach(t => freq.set(t, (freq.get(t) || 0) + 1));
+        return [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k).slice(0, 40);
+      }
+
+      function analyzeAtsScore() {
+        updateConstantFromForm();
+        updateVariableFromForm();
+
+        const validation = validateResume();
+        const jd = refs.jobDescription.value.trim();
+        const resumeText = resumeTextForAts().toLowerCase();
+        const jdKeywords = extractKeywords(jd);
+        const active = getActiveVersion();
+
+        let keywordScore = 0;
+        let sectionScore = 0;
+        let contactScore = 0;
+        let skillsScore = 0;
+        let experienceScore = 0;
+
+        const matchedKeywords = jdKeywords.filter(k => resumeText.includes(k));
+        keywordScore = jdKeywords.length ? Math.round((matchedKeywords.length / jdKeywords.length) * 35) : 18;
+
+        const sectionsPresent = [
+          !!active.summary,
+          hasAnySkill(active.professionalSkills),
+          !!active.experiences.length,
+          !!constantProfileData.education,
+          !!constantProfileData.certifications
+        ].filter(Boolean).length;
+        sectionScore = Math.round((sectionsPresent / 5) * 20);
+
+        const contactFields = [constantProfileData.fullName, constantProfileData.email, constantProfileData.phone, constantProfileData.linkedin, constantProfileData.location].filter(Boolean).length;
+        contactScore = Math.round((contactFields / 5) * 15);
+
+        const skillCount = Object.values(active.professionalSkills || {}).reduce((acc, arr) => acc + (arr?.length || 0), 0);
+        skillsScore = Math.min(20, Math.round(skillCount >= 14 ? 20 : (skillCount / 14) * 20));
+
+        const completeExp = active.experiences.filter(exp => exp.clientName && exp.roleTitle && exp.startDate).length;
+        experienceScore = Math.round((completeExp / Math.max(1, active.experiences.length)) * 10);
+
+        let score = keywordScore + sectionScore + contactScore + skillsScore + experienceScore;
+        score -= validation.errors.length * 3;
+        score = Math.max(0, Math.min(100, score));
+
+        const missing = jdKeywords.filter(k => !resumeText.includes(k)).slice(0, 15);
+
+        const suggestions = [];
+        if (validation.errors.length) suggestions.push('Fix required field validation errors first to improve ATS compatibility.');
+        if (!active.summary) suggestions.push('Generate or refine the version summary using JD-specific role and technical context.');
+        if (!hasAnySkill(active.professionalSkills)) suggestions.push('Generate grouped Professional Skills from the JD to improve signal coverage.');
+        if (missing.length > 0) suggestions.push('Incorporate missing JD terms naturally into summary, grouped skills, and experience bullets.');
+        if (active.experiences.some(e => splitLines(e.responsibilities).length < 2 && splitLines(e.projectBullets || '').length < 2)) {
+          suggestions.push('Add more metric-driven achievement bullets to each experience.');
+        }
+        if (score >= 90) suggestions.push('Excellent ATS alignment. Keep content concise and role-specific for each application.');
+
+        refs.atsScoreValue.textContent = String(score);
+        refs.scoreFill.style.width = `${score}%`;
+        refs.scoreFill.style.background = score >= 90 ? '#22c55e' : score >= 70 ? '#f59e0b' : '#ef4444';
+        refs.scoreBreakdown.textContent = `Keyword Match: ${keywordScore}/35 | Section Completeness: ${sectionScore}/20 | Contact: ${contactScore}/15 | Skills Alignment: ${skillsScore}/20 | Experience Alignment: ${experienceScore}/10`;
+
+        refs.missingKeywords.innerHTML = missing.length
+          ? missing.map(k => `<span class="chip">${escapeHtml(k)}</span>`).join('')
+          : '<span class="chip">No major keyword gaps detected.</span>';
+
+        refs.atsSuggestions.innerHTML = suggestions.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+
+        if (validation.errors.length) {
+          setMessage('error', validation.errors[0]);
+        } else if (validation.warns.length) {
+          setMessage('warn', validation.warns.join(' '));
+        } else {
+          setMessage('success', `ATS analysis completed. Estimated match score: ${score}/100.`);
+        }
+      }
+
+      function renderAll() {
+        renderVersionSelect();
+        renderSkillsEditor();
+        renderExperiences();
+        renderResumePreview();
+        analyzeAtsScore();
+      }
+
+      function bindEvents() {
+        ['fullName','targetRole','email','phone','linkedin','location','education','certifications','defaultBullets']
+          .forEach(id => refs[id].addEventListener('input', () => {
+            renderResumePreview();
+            persist();
+          }));
+
+        refs.versionSummary.addEventListener('input', () => {
+          updateVariableFromForm();
+          renderResumePreview();
+          persist();
+        });
+
+        refs.versionSelect.addEventListener('change', () => {
+          variableResumeData.activeVersionId = refs.versionSelect.value;
+          renderAll();
+          persist();
+        });
+
+        refs.versionName.addEventListener('input', () => {
+          const active = getActiveVersion();
+          active.name = refs.versionName.value || 'Untitled Version';
+          renderVersionSelect();
+          persist();
+        });
+
+        refs.btnAddExperience.addEventListener('click', () => {
+          addExperience();
+          persist();
+        });
+
+        refs.btnDuplicateVersion.addEventListener('click', () => {
+          duplicateVersion();
+          setMessage('success', 'Resume version duplicated. Summary and skills remain version-specific.');
+        });
+
+        refs.btnSaveMaster.addEventListener('click', () => {
+          updateConstantFromForm();
+          updateVariableFromForm();
+          const validation = validateResume();
+          if (validation.errors.length) {
+            setMessage('error', validation.errors.join(' '), 5500);
+            return;
+          }
+          persist();
+          setMessage('success', 'Master profile and current version saved to localStorage.');
+          if (validation.warns.length) setMessage('warn', validation.warns.join(' '), 4500);
+        });
+
+        refs.btnLoadMaster.addEventListener('click', () => {
+          loadFromStorage();
+          bindConstantToForm();
+          renderAll();
+          setMessage('success', 'Loaded profile from localStorage.');
+        });
+
+        refs.btnPreview.addEventListener('click', () => {
+          const validation = validateResume();
+          if (validation.errors.length) {
+            setMessage('error', validation.errors.join(' '), 6000);
+            return;
+          }
+          renderResumePreview();
+          analyzeAtsScore();
+          persist();
+          setMessage('success', 'Preview refreshed.');
+        });
+
+        refs.btnPrint.addEventListener('click', () => {
+          const validation = validateResume();
+          if (validation.errors.length) {
+            setMessage('error', 'Fix required fields before printing.');
+            return;
+          }
+          window.print();
+        });
+
+        refs.btnCopyAts.addEventListener('click', async () => {
+          try {
+            const text = resumeTextForAts();
+            await navigator.clipboard.writeText(text);
+            setMessage('success', 'Plain ATS text copied to clipboard.');
+          } catch {
+            setMessage('warn', 'Clipboard access unavailable in this context.');
+          }
+        });
+
+        refs.btnExportJson.addEventListener('click', () => {
+          updateConstantFromForm();
+          updateVariableFromForm();
+          const payload = { constantProfileData, variableResumeData };
+          const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'ats-resume-data.json';
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+
+        refs.jsonImport.addEventListener('change', async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          try {
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            if (!parsed.constantProfileData || !parsed.variableResumeData) {
+              throw new Error('Invalid JSON shape.');
+            }
+            const migrated = migrateLegacyData(parsed);
+            constantProfileData = migrated.constantProfileData;
+            variableResumeData = migrated.variableResumeData;
+            bindConstantToForm();
+            renderAll();
+            persist();
+            setMessage('success', 'JSON imported successfully.');
+          } catch {
+            setMessage('error', 'Failed to import JSON. Please verify file format.');
+          } finally {
+            refs.jsonImport.value = '';
+          }
+        });
+
+        refs.btnAnalyzeAts.addEventListener('click', analyzeAtsScore);
+        refs.btnGenerateProfileFromJD.addEventListener('click', generateSummaryAndSkillsFromJD);
+
+        refs.btnGenerateAllBullets.addEventListener('click', () => {
+          const active = getActiveVersion();
+          active.experiences.forEach(exp => {
+            const auto = generateBullets(exp);
+            const existing = splitLines(exp.projectBullets || '');
+            exp.projectBullets = [...existing, ...auto].filter(Boolean).join('\n');
+          });
+          renderAll();
+          persist();
+          setMessage('success', 'Generated ATS-friendly bullet points for all experiences.');
+        });
+
+        setInterval(() => {
+          updateConstantFromForm();
+          updateVariableFromForm();
+          persist();
+        }, 5000);
+      }
+
+      function init() {
+        cacheDom();
+        loadFromStorage();
+        bindConstantToForm();
+
+        variableResumeData.versions = (variableResumeData.versions || []).map(ensureVersionShape);
+        if (!variableResumeData.versions.length) {
+          variableResumeData.versions = deepClone(sampleData.variableResumeData.versions).map(ensureVersionShape);
+        }
+        if (!variableResumeData.activeVersionId) {
+          variableResumeData.activeVersionId = variableResumeData.versions[0].id;
+        }
+
+        bindEvents();
+        renderAll();
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
